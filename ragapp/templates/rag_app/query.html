@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Query Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .panel {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background-color: #f8f9ff;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-clear {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-clear:hover {
+            background-color: #e0e0e0;
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-tabs {
+            display: flex;
+            border-bottom: 2px solid #e1e8ed;
+            background-color: #f9f9f9;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .documents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .document-item {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 14px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .document-item:hover {
+            background-color: #f0f1ff;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        }
+
+        .doc-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .doc-content {
+            color: #333;
+            line-height: 1.6;
+            font-size: 13px;
+            word-break: break-word;
+        }
+
+        .response-text {
+            color: #333;
+            line-height: 1.8;
+            font-size: 14px;
+            word-break: break-word;
+            animation: slideIn 0.3s ease;
+            white-space: pre-wrap;
+        }
+
+        .response-text ul, .response-text ol {
+            margin-left: 20px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .response-text li {
+            margin: 6px 0;
+            line-height: 1.6;
+        }
+
+        .response-text strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .streaming-char {
+            animation: fadeIn 0.1s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e1e8ed;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner-text {
+            margin-top: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .error-box {
+            background-color: #fee;
+            border-left: 4px solid #dc3545;
+            padding: 14px;
+            border-radius: 6px;
+            color: #721c24;
+            margin: 10px 0;
+        }
+
+        .success-box {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 14px;
+            border-radius: 6px;
+            color: #155724;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Input Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                🔍 Query Input
+            </div>
+            <div class="panel-body">
+                <form id="queryForm">
+                    <div class="form-group">
+                        <label for="query">Your Question:</label>
+                        <textarea id="query" name="query" placeholder="Ask your question..." required></textarea>
+                    </div>
+
+<!--                    <div class="form-group">-->
+<!--                        <label for="k">Number of Documents (k):</label>-->
+<!--                        <input type="number" id="k" name="k" value="5" min="1" max="50">-->
+<!--                    </div>-->
+
+<!--                    <div class="form-group">-->
+<!--                        <label for="scoreThreshold">Score Threshold:</label>-->
+<!--                        <input type="number" id="scoreThreshold" name="scoreThreshold" value="0.3" min="0" max="1" step="0.1">-->
+<!--                    </div>-->
+
+                    <div class="button-group">
+                        <button type="submit" class="btn-submit" id="submitBtn">Submit Query</button>
+                        <button type="button" class="btn-clear" onclick="clearForm()">Clear</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="panel output-panel">
+            <div class="panel-header">
+                📊 Results
+            </div>
+
+            <div class="output-tabs">
+                <button class="tab-btn active" onclick="switchTab('response')">Response</button>
+                <button class="tab-btn" onclick="switchTab('documents')">Documents</button>
+            </div>
+
+            <!-- Response Tab -->
+            <div class="tab-content active" id="response">
+                <div class="panel-body">
+                    <div class="empty-state" id="responseEmpty">
+                        <div class="empty-state-icon">💬</div>
+                        <p>Your response will appear here...</p>
+                    </div>
+                    <div class="loading-spinner" id="responseLoading">
+                        <div class="spinner"></div>
+                        <div class="spinner-text">Streaming response...</div>
+                    </div>
+                    <div class="response-text" id="responseContent"></div>
+                </div>
+            </div>
+
+            <!-- Documents Tab -->
+            <div class="tab-content" id="documents">
+                <div class="panel-body">
+                    <div class="empty-state" id="docsEmpty">
+                        <div class="empty-state-icon">📄</div>
+                        <p>Retrieved documents will appear here...</p>
+                    </div>
+                    <div class="stats" id="docStats" style="display: none;">
+                        <div class="stat-item">
+                            <div class="stat-label">Documents</div>
+                            <div class="stat-value" id="docCount">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Query</div>
+                            <div class="stat-value" id="queryDisplay">-</div>
+                        </div>
+                    </div>
+                    <div class="documents-list" id="documentsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function clearForm() {
+            document.getElementById('queryForm').reset();
+            document.getElementById('responseContent').innerHTML = '';
+            document.getElementById('documentsList').innerHTML = '';
+            document.getElementById('responseEmpty').style.display = 'block';
+            document.getElementById('docsEmpty').style.display = 'block';
+            document.getElementById('docStats').style.display = 'none';
+        }
+
+        function formatTextToBullets(text) {
+            let html = '';
+            const lines = text.split('\n');
+            let inList = false;
+            let listType = 'ul';
+
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+
+                // Check if line starts with bullet point or number
+                const bulletMatch = line.match(/^[•◦\-\*]\s+(.+)$/);
+                const numberMatch = line.match(/^\d+\.\s+(.+)$/);
+
+                if (bulletMatch || numberMatch) {
+                    if (!inList) {
+                        if (numberMatch) {
+                            html += '<ol>';
+                            listType = 'ol';
+                        } else {
+                            html += '<ul>';
+                            listType = 'ul';
+                        }
+                        inList = true;
+                    }
+
+                    const content = bulletMatch ? bulletMatch[1] : numberMatch[1];
+                    // Bold text between asterisks or **
+                    const formattedContent = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                                   .replace(/\*(.+?)\*/g, '<strong>$1</strong>');
+                    html += `<li>${formattedContent}</li>`;
+                } else {
+                    if (inList) {
+                        html += `</${listType}>`;
+                        inList = false;
+                    }
+                    // Bold text between asterisks
+                    const formattedLine = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                                              .replace(/\*(.+?)\*/g, '<strong>$1</strong>');
+                    html += `<p>${formattedLine}</p>`;
+                }
+            }
+
+            if (inList) {
+                html += `</${listType}>`;
+            }
+
+            return html;
+        }
+
+        async function streamText(text, elementId, speed = 10) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+
+            // Format the text to bullets
+            const formattedHTML = formatTextToBullets(text);
+
+            // Stream character by character
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.className = 'streaming-char';
+                element.appendChild(span);
+
+                // Scroll to bottom
+                element.parentElement.scrollTop = element.parentElement.scrollHeight;
+
+                await new Promise(resolve => setTimeout(resolve, speed));
+            }
+
+            // After streaming, render the formatted version
+            element.innerHTML = formattedHTML;
+        }
+
+        function displayDocuments(documents, query) {
+            const docsList = document.getElementById('documentsList');
+            const docsEmpty = document.getElementById('docsEmpty');
+            const docStats = document.getElementById('docStats');
+
+            docsEmpty.style.display = 'none';
+            docStats.style.display = 'grid';
+
+            document.getElementById('docCount').textContent = documents.length;
+            document.getElementById('queryDisplay').textContent = documents.length;
+
+            docsList.innerHTML = documents.map(doc => `
+                <div class="document-item">
+                    <span class="doc-number">${doc.id}</span>
+                    <div class="doc-content">${escapeHtml(doc.content)}</div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('queryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const query = document.getElementById('query').value;
+            const k = document.getElementById('k').value;
+            const scoreThreshold = document.getElementById('scoreThreshold').value;
+            const submitBtn = document.getElementById('submitBtn');
+
+            // Reset UI
+            document.getElementById('responseContent').innerHTML = '';
+            document.getElementById('responseEmpty').style.display = 'none';
+            document.getElementById('responseLoading').style.display = 'block';
+            document.getElementById('documentsList').innerHTML = '';
+            document.getElementById('docsEmpty').style.display = 'block';
+            document.getElementById('docStats').style.display = 'none';
+
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/rag/api/query/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        k: parseInt(k),
+                        score_threshold: parseFloat(scoreThreshold)
+                    })
+                });
+
+                const data = await response.json();
+
+                document.getElementById('responseLoading').style.display = 'none';
+
+                if (data.success) {
+                    // Display documents
+                    displayDocuments(data.documents, query);
+
+                    // Stream response text
+                    await streamText(data.response, 'responseContent', 15);
+                } else {
+                    document.getElementById('responseContent').innerHTML =
+                        `<div class="error-box">Error: ${escapeHtml(data.response || data.error)}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('responseLoading').style.display = 'none';
+                document.getElementById('responseContent').innerHTML =
+                    `<div class="error-box">Error: ${escapeHtml(error.message)}</div>`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
