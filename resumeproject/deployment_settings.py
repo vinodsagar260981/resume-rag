@@ -11,6 +11,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY')
 OLLAMA_API_BASE = os.getenv('OLLAMA_API_BASE')
 
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
