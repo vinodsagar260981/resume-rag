@@ -8,6 +8,8 @@ CSRF_TRUSTED_ORIGINS = [f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME')}"]
 DEBUG = False
 
 SECRET_KEY = os.getenv('SECRET_KEY')
+OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY')
+OLLAMA_API_BASE = os.getenv('OLLAMA_API_BASE')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
