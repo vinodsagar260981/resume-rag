@@ -33,13 +33,11 @@ ALLOWED_HOSTS = ['*']
 
 # RAG Configuration
 RAG_CONFIG = {
-    'persistent_directory': os.path.join(BASE_DIR, 'db/chroma_db'),
     'embedding_model': 'mxbai-embed-large:latest',
-    'llm_model': 'llama3.2:latest',
-    'search_kwargs': {
-        'k': 5,
-        'score_threshold': 0.3,
-    }
+    'llm_model': 'gpt-oss:120b-cloud',
+    'persistent_directory': os.path.join(BASE_DIR, 'db/chroma_db'),
+    'search_kwargs': {'k': 5, 'score_threshold': 0.5},
+    'ollama_base_url': os.getenv('OLLAMA_API_BASE', 'http://localhost:11434'),
 }
 
 CORS_ALLOWED_ORIGINS = [
@@ -74,10 +72,13 @@ INSTALLED_APPS = [
     'ragapp',
     'rest_framework',
     'corsheaders',
+    'whitenoise.runserver_nostatic',
 
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -154,7 +155,7 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 
 # Default primary key field type

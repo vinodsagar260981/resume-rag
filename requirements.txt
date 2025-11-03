@@ -7,3 +7,6 @@ langchain-ollama
 chromadb
 python-dotenv
 gunicorn
+ollama
+uvicorn
+whitenoise
